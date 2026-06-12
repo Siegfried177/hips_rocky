@@ -1,0 +1,10 @@
+ALARM_SCHEMA = {
+    "timestamp": str,
+    "type": str,
+    "severity": str,
+    "module": str,
+    "source_ip": str | None,
+    "user": str | None,
+    "message": str,
+    "raw_data": dict | None
+}

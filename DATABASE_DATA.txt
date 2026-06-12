@@ -1,0 +1,16 @@
+-- CONVENCIONES
+Item Convención elegida Ejemplo 
+Tablas snake_case · plural alarmas, acciones_prevencion 
+Columnas snake_case ip_origen, tipo_alarma 
+Índices idx_tabla_columna idx_alarmas_timestamp 
+Claves foráneas fk_tabla_ref fk_acciones_alarma 
+Usuario de aplicación nombre_restrictivo hips_app (sin superusuario) 
+
+-- TABLAS
+Tabla,Columnas mínimas,Propósito
+alarmas,"id, timestamp, tipo_alarma, ip_origen, modulo, resuelta, nivel_severidad, usuario_affected",Registro de todas las alarmas detectadas
+acciones_prevencion,"id, alarma_id, accion, timestamp, resultado, comando_ejecutado, duracion_bloqueo",Log del módulo de prevención
+usuarios_web,"id, username, password_hash, rol, ultimo_login, estado_cuenta, logins_fallidos",Acceso a la interfaz web
+configuracion_modulos,"id, modulo, parametro, valor, activo",Umbrales y config de cada módulo
+excepciones_ip,"id, ip_permitida, modulo_excluido, motivo, fecha_alta, creado_por",Registra las direcciones IP que se encuentran en lista blanca para evitar que ciertas alertas legítimas disparen bloqueos de firewall.
+historico_sesiones,"id, usuario_id, ip_conexion, user_agent, fecha_inicio, fecha_fin, token_sesion",Auditoría de los accesos y tiempos de sesion de los administradores en la web
