@@ -3,7 +3,8 @@ from email.mime.text import MIMEText
 
 MAILS_SUBJECT = {
                     "sniffer_detect": "Intrusión por Captura de Paquetes Detectada",
-                    "mail_queue": ""
+                    "mail_queue": "Alerta de Cola de Correos",
+                    "ddos_detect": "DDOS Detectado",
                     }
 
 MAILS_BODY = {
@@ -15,9 +16,7 @@ MAILS_BODY = {
 def send_email_to_admin(alarm):
     sender = "hips@system.local"
     receiver = "admin@company.com"
-
     subject = f"[HIPS ALERTA] - {MAILS_SUBJECT.get(alarm['module'])}"
-
     body = MAILS_BODY[alarm['module']]
 
     msg = MIMEText(body)
@@ -26,8 +25,7 @@ def send_email_to_admin(alarm):
     msg["To"] = receiver
 
     try:
-        with smtplib.SMTP("localhost") as server:
-            server.send_message(msg)
+        with smtplib.SMTP("localhost") as server: server.send_message(msg)
 
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")

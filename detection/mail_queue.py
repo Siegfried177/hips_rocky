@@ -1,8 +1,9 @@
 import subprocess
 import re
 from alerts.logger import register_alarm
+from prevention.engine import execute_action
 
-DEFAULT_THRESHOLD = 50
+DEFAULT_THRESHOLD = 50 # Default threshold for mail queue size
 
 # Get the size of the mail queue
 def get_mail_queue_size():
@@ -18,14 +19,15 @@ def get_mail_queue_size():
     return 0
 
 # Run the mail queue detection and register an alarm if the queue size exceeds the threshold
-def run_mail_queue_detection(threshold=DEFAULT_THRESHOLD):
+def run_mail_queue_detection(threshold = DEFAULT_THRESHOLD):
     queue_size = get_mail_queue_size()
 
     if queue_size >= threshold:
-        register_alarm(
-            alarm_type="MAIL_QUEUE_OVERFLOW",
+        alarm = register_alarm(
+            alarm_type="MAIL_QUEUE_ALTA",
             module="mail_queue",
             message=f"Mail queue size too high: {queue_size}",
-            severity="HIGH",
             raw_data={"queue_size": queue_size}
         )
+        
+        execute_action("MAIL_QUEUE_ALTA", {"queue_size": queue_size}, alarm_id = alarm.get("id"))

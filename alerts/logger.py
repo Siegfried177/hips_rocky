@@ -6,24 +6,17 @@ from db.repository import insert_alarm
 
 ALERT_BUFFER_FILE = r"C:\testing" #"/var/log/hips/alarms_buffer.jsonl"
 
-ALERTS_NAME = {
-    
-    "sniffer_detect" : "SNIFFER DETECTADO",
-    
-    "mail_queue" : "MAIL_QUEUE_ALTA"
-}
-
 def _ensure_file():
     os.makedirs(os.path.dirname(ALERT_BUFFER_FILE), exist_ok = True)
     if not os.path.exists(ALERT_BUFFER_FILE):
         with open(ALERT_BUFFER_FILE, "w") as f:
             pass
 
-def register_alarm(alarm_type, module, message, source_ip = None, user = None, raw_data = None):
+def register_alarm(module, alarm_type, message, source_ip = None, user = None, raw_data = None):
     _ensure_file()
 
     timestamp = datetime.now(timezone.utc).isoformat()
-
+    
     alarm = {
         "timestamp": timestamp,
         "type": alarm_type,

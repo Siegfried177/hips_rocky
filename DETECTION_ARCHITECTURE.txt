@@ -1,0 +1,7 @@
+Detection by a detection module
+   ↓
+logger.register_alarm (DB + log + email) -- returns alarm_id
+   ↓
+engine.execute_action (engine) -- receives alarm_id
+   ↓
+prevention actions AND insert_prevention_action -- uses alarm_id

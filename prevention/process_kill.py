@@ -1,11 +1,15 @@
 import subprocess
 
-# Kill all processes matching a given name
-def kill_process_by_name(process_name):
+# Function to kill a process by name or PID
+def kill_process(pid = None, name = None):
     try:
-        subprocess.run(["pkill", "-f", process_name], check = True)
-        
-        return True, f"Process {process_name} killed"
+        if pid:
+            subprocess.run(["kill", "-9", str(pid)], check = True)
+            return True, f"Killed PID {pid}"
 
-    except subprocess.CalledProcessError:
-        return False, f"Failed to kill {process_name}"
+        if name:
+            subprocess.run(["pkill", "-9", "-f", name], check = True)
+            return True, f"Killed process {name}"
+
+    except subprocess.CalledProcessError as e:
+        return False, str(e)
