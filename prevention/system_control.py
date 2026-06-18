@@ -25,3 +25,14 @@ def remove_malicious_cron_entry(username, signature_keyword=""):
         return True, f"crontab -u {username} - [Filtro aplicado]"
     except subprocess.CalledProcessError:
         return False, None
+
+def quarantine_or_delete_tmp_file(file_path):
+    import os
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return True, f"rm -f {file_path}"
+        return False, None
+    except Exception as e:
+        print(f"[-] Error al mitigar archivo sospechoso en tmp ({file_path}): {e}")
+        return False, None
