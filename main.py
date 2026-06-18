@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
+import os
+import sys
+import threading
 import time
 from datetime import datetime, timezone
 
+# Capa de presentación/API
+from web import app
+
 # Capa de persistencia/logs
-from db.repository import insert_prevention_action
+from db.repository import create_user, insert_prevention_action
 from alerts.logger import register_alarm 
 
 # Módulos de la carpeta detection
 from detection.access_monitor import detect_bruteforce
-from detection.users_monitor import detect_uid_zero_escalation
+########from detection.users_monitor import detect_uid_zero_escalation
 from detection.log_analyzer import analyze_logs
-from detection.process_monitor import detect_suspicious_processes
+########from detection.process_monitor import detect_suspicious_processes
 from detection.cron_monitor import detect_malicious_cron
 from detection.tmp_monitor import detect_suspicious_tmp_files
 
@@ -108,9 +114,22 @@ def system_init():
                 )
 
         except Exception as e:
-            print(f"[-] Error en el bucle psincipal: {e}")
+            print(f"[-] Error en el bucle principal: {e}")
             
         time.sleep(10)
+        
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+app = app.create_app()
+print("[*] Iniciando aplicación web en http://0.0.0.0:5000")
 
-if __name__ == "__main__":
-    system_init()
+if __name__ == "__main__":   
+    # Iniciar el hilo del sistema HIPS
+    t = threading.Thread(target=system_init, daemon=True)
+    t.start()
+    
+    # Iniciar la aplicación web
+    app.run(
+        host = "0.0.0.0",
+        port = 5000,
+        debug = True
+    )

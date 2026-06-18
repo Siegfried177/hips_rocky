@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Module Configuration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Module Configuration Panel</h1>
+
+        <form method="POST">
+
+            {% for module_name, params in config.items() %}
+
+            <div class="module">
+                <h2>{{ modules[module_name] }}</h2>
+
+                <table>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                        <th>Active</th>
+                    </tr>
+
+                    {% for p in params %}
+                    <tr>
+                        <td>{{ p.parametro }}</td>
+
+                        <td>
+                            <input type="text" name="value_{{ module_name }}_{{ p.parametro }}" value="{{ p.valor }}">
+                        </td>
+
+                        <td>
+                            <input type="checkbox" name="active_{{ module_name }}_{{ p.parametro }}" {% if p.activo %}checked{%
+                                endif %}>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </table>
+            </div>
+
+            {% endfor %}
+
+            <button class="save-btn" type="submit">Save Configuration</button>
+
+        </form>
+    </div>
+</body>
+
+</html>

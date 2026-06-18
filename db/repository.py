@@ -1,5 +1,21 @@
 from db.connection import get_connection
 from datetime import datetime, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Helper function to parse a value from string to bool
+def parse_value(value):
+    if value.isdigit():
+        return int(value)
+
+    try:
+        return float(value)
+    except:
+        pass
+
+    if value.lower() in ["true", "false"]:
+        return value.lower() == "true"
+
+    return value
 
 # Function to insert a new alarm into the 'alarmas' table
 def insert_alarm(timestamp, tipo_alarma, ip_origen, modulo, nivel_severidad, usuario_affected = None):
@@ -47,6 +63,7 @@ def insert_prevention_action(alarma_id, accion, resultado, comando_ejecutado = N
             duracion_bloqueo
         )
         VALUES (%s, %s, %s, %s, %s, %s);
+        RETURNING id;
     """
 
     cur.execute(query, (
@@ -66,21 +83,124 @@ def insert_prevention_action(alarma_id, accion, resultado, comando_ejecutado = N
     
     return prev_action_id
 
-# Function to retrieve active configuration parameters for a given module
-def get_module_config(modulo):
+# Function to retrieve all alarms
+def get_all_alarms(limit = 100):
     conn = get_connection()
     cur = conn.cursor()
 
     query = """
-    SELECT parametro, valor
-    FROM configuracion_modulos
-    WHERE modulo = %s AND activo = TRUE;
+        SELECT id, timestamp, tipo_alarma, ip_origen, modulo, nivel_severidad, usuario_affected
+        FROM alarmas
+        ORDER BY timestamp DESC
+        LIMIT %s;
     """
 
-    cur.execute(query, (modulo,))
+    cur.execute(query, (limit,))
     rows = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return {param: value for param, value in rows}
+    alarms = []
+    for row in rows:
+        alarms.append({
+            "id": row[0],
+            "timestamp": row[1],
+            "type": row[2],
+            "ip": row[3],
+            "module": row[4],
+            "severity": row[5],
+            "user": row[6]
+        })
+
+    return alarms
+
+# Function to retrieve configuration parameters for a given module
+def get_module_config(module):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT parametro, valor, activo
+        FROM configuracion_modulos
+        WHERE modulo = %s
+    """
+
+    cur.execute(query, (module,))
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    config = []
+
+    for parametro, valor, activo in rows:
+        config.append({
+            "parametro": parametro,
+            "valor": parse_value(valor),
+            "activo": activo
+        })
+
+    return config
+
+# Function to update the value of a configuration parameter
+def update_module_config(module, parameter, value, active):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    query = """
+        UPDATE configuracion_modulos
+        SET valor = %s, activo = %s
+        WHERE modulo = %s AND parametro = %s;
+    """
+
+    cur.execute(query, (value, active, module, parameter))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return True
+
+# Function to retrieve a user by username from the 'usuarios_web' table
+def get_user_by_username(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, username, password_hash, rol, estado_cuenta, logins_fallidos
+        FROM usuarios_web
+        WHERE username = %s
+    """, (username,))
+
+    return cur.fetchone()
+
+# Function to create a new user in the 'usuarios_web' table
+def create_user(username, password, rol="user"):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    password_hash = generate_password_hash(password)
+
+    cur.execute("""
+        INSERT INTO usuarios_web (username, password_hash, rol, estado_cuenta)
+        VALUES (%s, %s, %s, %s)
+    """, (username, password_hash, rol, "active"))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# Function to verify user credentials
+def verify_user(username, password):
+    user = get_user_by_username(username)
+
+    if not user:
+        return None
+
+    stored_hash = user[2]
+
+    if check_password_hash(stored_hash, password):
+        return user
+
+    return None

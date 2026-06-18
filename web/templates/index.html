@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Estado del Sistema</h1>
+        <p>Status: {{ status.system }}</p>
+        <p>Total de Alarmas: {{ status.alarms_count }}</p>
+        
+        <h2>Lista de Alarmas</h2>
+        <table border="1">
+            <tr>
+                <th>Tipo</th>
+                <th>Módulo</th>
+                <th>Mensaje</th>
+                <th>Severidad</th>
+                <th>Fecha</th>
+            </tr>
+        
+            {% for alarm in alarms %}
+            <tr>
+                <td>{{ alarm.type }}</td>
+                <td>{{ alarm.module }}</td>
+                <td>{{ alarm.message }}</td>
+                <td>{{ alarm.severity }}</td>
+                <td>{{ alarm.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <br>
+        <a href="/config">Configuración</a>
+    </div>
+</body>
+
+</html>
