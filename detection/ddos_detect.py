@@ -3,6 +3,7 @@ from collections import defaultdict
 from alerts.logger import register_alarm
 
 THRESHOLD = 100 # Number of requests from an IP to trigger alarm
+DNS_LOG_PATH = "/var/log/dns.log"
 
 def parse_dns_log(file_path):
     ip_counter = defaultdict(int)
@@ -17,13 +18,14 @@ def parse_dns_log(file_path):
 
                 ip = parts[0] 
                 ip_counter[ip] += 1
+                
     except FileNotFoundError:
         print(f"[-] Archivo de trazas de red no encontrado: {file_path}")
 
     return ip_counter
 
 
-def detect_ddos(file_path):
+def detect_ddos(file_path = DNS_LOG_PATH):
     ip_counts = parse_dns_log(file_path)
 
     for ip, count in ip_counts.items():
@@ -34,4 +36,5 @@ def detect_ddos(file_path):
                 message = f"{count} solicitudes de DNS de la IP {ip} ", source_ip = ip
             )
             return alarm_id, ip
+        
     return None, None

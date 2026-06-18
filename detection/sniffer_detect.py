@@ -4,7 +4,6 @@ import re
 from alerts.logger import register_alarm
 from db.repository import insert_prevention_action
 from prevention.engine import execute_action
-from prevention.process_kill import kill_process
 
 BLACKLIST_PROCESSES = ["tcpdump", "wireshark", "tshark", "dumpcap", "ettercap"]
 

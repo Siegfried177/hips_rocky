@@ -1,7 +1,7 @@
 from prevention import mail_handler
 from prevention.rules_loader import load_rules
 from prevention.firewall import block_ip
-from prevention.process_kill import kill_process
+from prevention.system_control import kill_process
 from prevention.network import disable_promisc
 from db.repository import insert_prevention_action
 

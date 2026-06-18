@@ -10,16 +10,13 @@ def get_mail_queue_size():
     result = subprocess.run(["mailq"], capture_output = True, text = True)
     output = result.stdout
 
-    if "empty" in output.lower(): 
-        return 0
+    if "empty" in output.lower(): return 0
 
     match = re.search(r"in (\d+) Requests", output)
 
-    if match: 
-        return int(match.group(1))
+    if match: return int(match.group(1))
 
     return 0
-
 
 # Run the mail queue detection and register an alarm if the queue size exceeds the threshold
 def run_mail_queue_detection(threshold = DEFAULT_THRESHOLD):
