@@ -13,7 +13,7 @@ def detect_suspicious_tmp_files():
             with os.scandir(directory) as entries:
                 for entry in entries:
                     try:
-                        if not entry.exists(follow_symlinks=False) or entry.is_symlink():
+                        if entry.is_symlink() or not os.path.exists(entry.path):
                             continue
                         
                         if entry.is_file():
