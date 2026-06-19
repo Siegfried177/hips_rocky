@@ -1,0 +1,23 @@
+CREATE USER hips_admin WITH PASSWORD '1234';
+
+CREATE DATABASE hips_db OWNER hips_admin;
+
+\c hips_db
+
+CREATE TABLE IF NOT EXISTS alarms (
+    id SERIAL PRIMARY KEY,
+    type TEXT,
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    alarm_id INT REFERENCES alarms (id),
+    detail TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hips_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT ALL ON TABLES TO hips_admin;
