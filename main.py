@@ -14,10 +14,10 @@ from alerts.logger import register_alarm
 
 # Módulos de la carpeta detection
 from detection.access_monitor import detect_bruteforce
-#from detection.users_monitor import detect_uid_zero_escalation
+from detection.users_monitor import detect_uid_zero_escalation
 from detection.sniffer_detect import run_sniffer_detection
 from detection.log_analyzer import analyze_logs
-#from detection.process_monitor import detect_suspicious_processes
+from detection.process_monitor import detect_suspicious_processes
 from detection.cron_monitor import detect_malicious_cron
 from detection.tmp_monitor import detect_suspicious_tmp_files
 from detection.file_integrity import check_integrity
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     app.run(
         host = "0.0.0.0",
         port = 5000,
-        debug = True
+        debug = False
     )

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from db.repository import insert_alarm
 
-ALERT_BUFFER_DIR  = r"C:\testing" #"/var/log/hips/alarms_buffer.jsonl"
+ALERT_BUFFER_DIR  = "/var/log/hips"
 ALERT_BUFFER_FILE = os.path.join(ALERT_BUFFER_DIR, "alarms_buffer.jsonl")
 
 def _ensure_file():

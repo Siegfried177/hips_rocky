@@ -3,8 +3,7 @@ import json, hashlib
 import os
 from alerts.logger import register_alarm
 
-#BASELINE_DIR = "/var/lib/hips"
-BASELINE_DIR = "C:\\testing"
+BASELINE_DIR = "/var/lib/hips"
 BASELINE_FILE = os.path.join(BASELINE_DIR, "baseline.json")
 
 # Calculate SHA256 hash of a file
@@ -30,7 +29,6 @@ def create_baseline():
     baseline = {
         "/etc/passwd": calculate_hash("/etc/passwd"),
         "/etc/shadow": calculate_hash("/etc/shadow"),
-        "C:\\testing\\1.json": calculate_hash("C:\\testing\\1.json")
     }
 
     with open(BASELINE_FILE, "w") as f:
