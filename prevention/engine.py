@@ -6,7 +6,7 @@ from prevention.network import disable_promisc
 from db.repository import insert_prevention_action
 
 ACTION_MAP = {
-    "BLOCK_IP": lambda data: block_ip(data.get("ip")),
+    "BLOCK_IP": lambda data: block_ip(data),
     "KILL_PROCESS": lambda data: kill_process(name = data.get("process")),
     "DISABLE_PROMISC": lambda data: disable_promisc(data.get("interface")),
     "BLOCK_MAIL_TRAFFIC": lambda data: mail_handler.block_mail_ports(),
@@ -15,7 +15,7 @@ ACTION_MAP = {
 }
 
 COMMAND_DESC_MAP = {
-    "BLOCK_IP": lambda data: f"firewall-cmd --add-rich-rule='rule family=ipv4 source address={data.get('ip')} reject'",
+    "BLOCK_IP": lambda data: f"firewall-cmd --add-rich-rule='rule family=ipv4 source address={data} reject'",
     "KILL_PROCESS": lambda data: f"pkill -9 -f {data.get('process')}",
     "DISABLE_PROMISC": lambda data: f"ip link set {data.get('interface')} promisc off",
     "BLOCK_MAIL_TRAFFIC": lambda data: "firewall-cmd --add-rich-rule (Puertos 25, 465, 587)",

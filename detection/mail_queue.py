@@ -23,6 +23,7 @@ def run_mail_queue_detection(threshold = DEFAULT_THRESHOLD):
     queue_size = get_mail_queue_size()
 
     if queue_size >= threshold:
+        print(f"[!] Alerta: Cola de correo saturada con {queue_size} mensajes.")
         alarm_id = register_alarm(
             alarm_type="MAIL_QUEUE_ALTA",
             module="mod_mail_queue",

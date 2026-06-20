@@ -62,7 +62,7 @@ def insert_prevention_action(alarma_id, accion, resultado, comando_ejecutado = N
             comando_ejecutado,
             duracion_bloqueo
         )
-        VALUES (%s, %s, %s, %s, %s, %s);
+        VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id;
     """
 

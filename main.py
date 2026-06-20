@@ -6,6 +6,8 @@ import time
 from datetime import datetime, timezone
 
 # Capa de presentación/API
+from prevention.engine import execute_action
+from prevention.mail_handler import block_mail_ports, flush_mail_queue, stop_mail_service
 from web import app
 
 # Capa de persistencia/logs
@@ -49,11 +51,67 @@ def system_init():
                 insert_prevention_action(
                     alarma_id = alarm_id,
                     accion = "ALERTA_INTEGRIDAD",
-                    timestamp = datetime.now(timezone.utc),
                     resultado = "EXITO" if success else "FALLIDO",
                     comando_ejecutado = command,
                     duracion_bloqueo = None
                 )
+            
+            
+            # ==========================================
+            # MÓDULO 3: Detector de Sniffers
+            # ==========================================
+            run_sniffer_detection()
+    
+            
+            # ==========================================
+            # MÓDULO 5: Cola de Correos 
+            # ==========================================
+            alarm_id, data = run_mail_queue_detection()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de Cola de Correos detectada, tamaño: {data}")
+                ALARM_ACTIONS =[stop_mail_service, block_mail_ports, flush_mail_queue]
+
+                for action in ALARM_ACTIONS:
+                    success, command = action()
+
+                    if action == stop_mail_service:
+                        action_upper = "STOP_MAIL_SERVICE"
+                    elif action == block_mail_ports:
+                        action_upper = "BLOCK_MAIL_PORTS"
+                    else:
+                        action_upper = "FLUSH_MAIL_QUEUE"
+
+                    insert_prevention_action(
+                        alarma_id = alarm_id,
+                        accion = action_upper,
+                        resultado = "EXITO" if success else "FALLIDO",
+                        comando_ejecutado = command,
+                        duracion_bloqueo = None
+                    )
+
+
+            # ==========================================
+            # MÓDULO 8: Detector de DDOS
+            # ==========================================
+            alarm_id, data = detect_ddos()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de DDOS detectada desde la IP {data}")
+
+                execute_action("DDOS_DETECTADO", data, alarm_id)
+
+
+# ==========================================
+            # MÓDULO 10: Intentos de Acceso Repetidos
+            # ==========================================
+            alarm_id, data = detect_bruteforce(SECURE_LOG)
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
+
+                execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id= alarm_id,data = data)
+
 
         except Exception as e:
             print(f"[-] Error en el bucle principal: {e}")

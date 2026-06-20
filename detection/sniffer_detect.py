@@ -49,10 +49,12 @@ def get_suspicious_processes():
 # Main function to run sniffer detection checks
 def run_sniffer_detection():
     promisc_ifaces = get_interfaces_promisc() # Check PROMISC mode
+    if promisc_ifaces == []: return
     for iface in promisc_ifaces:
         handle_promisc_interface(iface)
 
     suspicious = get_suspicious_processes() # Check sniffing tools
+    if suspicious == []: return 
     for proc in suspicious:
         handle_suspicious_process(proc)
 

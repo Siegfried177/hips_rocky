@@ -1,37 +1,96 @@
+#!/usr/bin/env python3
 import subprocess
 
 # Mail handling functions for prevention actions related to mail queue issues
 def block_mail_ports():
-    ports = ["25", "465", "587"] # Common mail ports: SMTP, SMTPS, and Submission
+    ports = ["25", "465", "587"]  # SMTP, SMTPS, Submission
 
     try:
+        commands_executed = []
+
         for port in ports:
-            subprocess.run([
-                "firewall-cmd", "--add-rich-rule",
+            cmd = [
+                "firewall-cmd",
+                "--permanent",
+                "--add-rich-rule",
                 f'rule family="ipv4" port port="{port}" protocol="tcp" reject'
-            ], check=True, capture_output=True)
-            
-        return True, "Puertos de correo (25, 465, 587) bloqueados exitosamente"
-    except subprocess.CalledProcessError as e:
-        return False, f"Fallo al bloquear puertos de red: {str(e)}"
+            ]
 
-# Flush the mail queue using postsuper command
-def flush_mail_queue():
-    try:
-        subprocess.run(["postsuper", "-d", "ALL"])
-        return True, "Cola de correo vaciada exitosamente"
-    except subprocess.CalledProcessError as e:
-        return False, f"Fallo al vaciar la cola de Postfix: {str(e)}"
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                text=True
+            )
 
-# Stop the mail service using systemctl
-def stop_mail_service(service_name = "postfix"):
-    try:
+            commands_executed.append(" ".join(cmd))
+
+        # Apply changes
+        reload_cmd = ["firewall-cmd", "--reload"]
+
         subprocess.run(
-            ["systemctl", "stop", service_name],
-            check = True, capture_output = True
+            reload_cmd,
+            check=True,
+            capture_output=True,
+            text=True
         )
 
-        return True, f"Servicio {service_name} detenido exitosamente"
+        commands_executed.append(" ".join(reload_cmd))
+
+        return True, commands_executed
 
     except subprocess.CalledProcessError as e:
-        return False, f"Fallor al detener {service_name}: {str(e)}"
+        return False, e.cmd if hasattr(e, "cmd") else str(e)
+
+
+def flush_mail_queue():
+    try:
+        cmd = ["postsuper", "-d", "ALL"]
+
+        subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        return True, " ".join(cmd)
+
+    except subprocess.CalledProcessError as e:
+        return False, e.cmd if hasattr(e, "cmd") else str(e)
+
+
+def stop_mail_service(service_name="postfix"):
+    try:
+        cmd = ["systemctl", "stop", service_name]
+
+        subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        return True, " ".join(cmd)
+
+    except subprocess.CalledProcessError as e:
+        return False, e.cmd if hasattr(e, "cmd") else str(e)
+
+
+def execute_mail_prevention(queue_size):
+    results = []
+
+    try:
+        if queue_size > 100:
+            results.append(stop_mail_service())
+
+        if queue_size > 50:
+            results.append(block_mail_ports())
+
+        if queue_size > 0:
+            results.append(flush_mail_queue())
+
+        return results
+
+    except Exception as e:
+        return [(False, f"Unexpected error: {str(e)}")]
