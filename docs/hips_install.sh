@@ -1,123 +1,73 @@
 #!/bin/bash
-set -e
+if [ "$EUID" -ne 0 ]; then
+  echo "[-] Por favor, ejecuta este script como root."
+  exit 1
+fi
 
-APP_DIR="/opt/hips"
-SERVICE_FILE="/etc/systemd/system/hips.service"
-PYTHON_BIN="/usr/bin/python3"
+echo "[*] Iniciando la instalación automatizada del HIPS..."
 
-DB_NAME="hips_db"
-DB_USER="hips_admin"
-DB_PASS="1234"
+if [ ! -f .env ]; then
+    echo "[*] Creando archivo de configuración .env desde la plantilla..."
+    cp .env.example .env
+    echo "[+] Archivo .env creado. Recuerda editarlo con tus credenciales."
+else
+    echo "[*] El archivo .env ya existe. Omitiendo este paso."
+fi
 
-echo "[1/6] Installing dependencies..."
-dnf install -y python3 python3-pip postgresql-server postgresql-contrib
+echo "[*] Verificando e instalando pip3..."
 
-echo "[2/6] Initializing PostgreSQL..."
-postgresql-setup --initdb
+dnf install python3-pip -y > /dev/null
 
-systemctl enable postgresql
-systemctl start postgresql
+if [ -f requirements.txt ]; then
+    echo "[*] Instalando dependencias de Python desde requirements.txt..."
+    pip3 install -r requirements.txt
+    if [ $? -eq 0 ]; then
+        echo "[+] Dependencias de Python instaladas con éxito."
+    else
+        echo "[-] Error al instalar las dependencias de Python."
+        exit 1
+    fi
+else
+    echo "[-] ERROR: No se encontró el archivo requirements.txt en la raíz."
+    exit 1
+fi
 
-echo "[3/6] Creating database and user..."
+echo "[*] Creando el archivo de servicio /etc/systemd/system/hips.service..."
 
-sudo -u postgres psql <<EOF
-CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';
-CREATE DATABASE $DB_NAME OWNER $DB_USER;
-EOF
-
-echo "[4/6] Running schema..."
-
-sudo -u postgres psql -d $DB_NAME <<EOF
-
-CREATE TABLE alarmas (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP NOT NULL,
-    tipo_alarma VARCHAR(100) NOT NULL,
-    ip_origen INET,
-    modulo VARCHAR(100) NOT NULL,
-    resuelta BOOLEAN DEFAULT FALSE,
-    nivel_severidad VARCHAR(20) NOT NULL,
-    usuario_affected VARCHAR(100)
-);
-
-CREATE TABLE acciones_prevencion (
-    id SERIAL PRIMARY KEY,
-    alarma_id INTEGER REFERENCES alarmas (id),
-    accion VARCHAR(100) NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
-    resultado VARCHAR(100),
-    comando_ejecutado TEXT,
-    duracion_bloqueo INTEGER
-);
-
-CREATE TABLE usuarios_web (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    rol VARCHAR(50) NOT NULL,
-    ultimo_login TIMESTAMP,
-    estado_cuenta VARCHAR(20),
-    logins_fallidos INTEGER DEFAULT 0
-);
-
-CREATE TABLE configuracion_modulos (
-    id SERIAL PRIMARY KEY,
-    modulo VARCHAR(100) NOT NULL,
-    parametro VARCHAR(100) NOT NULL,
-    valor TEXT NOT NULL,
-    activo BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE excepciones_ip (
-    id SERIAL PRIMARY KEY,
-    ip_permitida INET NOT NULL,
-    modulo_excluido VARCHAR(100),
-    motivo TEXT,
-    fecha_alta TIMESTAMP NOT NULL,
-    creado_por VARCHAR(100)
-);
-
-CREATE TABLE historico_sesiones (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER REFERENCES usuarios_web (id),
-    ip_conexion INET,
-    user_agent TEXT,
-    fecha_inicio TIMESTAMP NOT NULL,
-    fecha_fin TIMESTAMP,
-    token_sesion TEXT
-);
-
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT ALL ON TABLES TO $DB_USER;
-
-EOF
-
-echo "[5/6] Installing project..."
-mkdir -p $APP_DIR
-cp -r ./src/* $APP_DIR/
-
-echo "[6/6] Creating systemd service..."
-
-cat > $SERVICE_FILE <<EOF
+cat << 'EOF' > /etc/systemd/system/hips.service
 [Unit]
-Description=HIPS Security System
+Description=Host Intrusion Prevention System (HIPS) Daemon
 After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$APP_DIR
-ExecStart=$PYTHON_BIN $APP_DIR/main.py
-Restart=always
-RestartSec=3
+Group=root
+
+WorkingDirectory=/root/hips_rocky
+
+ExecStart=/usr/bin/python3 /root/hips_rocky/main.py
+Restart=on-failure
+RestartSec=5s
+
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+echo "[*] Recargando el gestor de servicios de Linux (systemd)..."
 systemctl daemon-reload
-systemctl enable hips
-systemctl start hips
 
-echo "HIPS installed successfully"
+echo "[*] Habilitando e iniciando el servicio hips.service..."
+systemctl enable hips.service --now
+
+echo ""
+echo "========================================================================"
+echo "[+] ¡INSTALACIÓN COMPLETADA CON ÉXITO!"
+echo "========================================================================"
+echo "Nota: El servicio ya está corriendo de fondo."
+echo "IMPORTANTE: Abre el archivo .env ('nano .env') para configurar la"
+echo "contraseña real de tu base de datos y luego reinicia el HIPS con:"
+echo "'sudo systemctl restart hips'"
+echo "========================================================================"
