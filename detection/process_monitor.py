@@ -20,6 +20,13 @@ def detect_suspicious_processes():
                     source_ip = None
                 )
                 return alarm_id, pid
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        except psutil.NoSuchProcess:
+            continue
+        except psutil.AccessDenied:
+            print(f"[-] Acceso denegado al leer detalles de un proceso.")
+        except psutil.ZombieProcess:
+            continue
+        except Exception as e:
+            print(f"[-] Error inesperado en mod_proccess_monitor: {e}")
             continue
     return None, None

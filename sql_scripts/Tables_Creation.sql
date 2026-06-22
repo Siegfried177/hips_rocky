@@ -1,10 +1,4 @@
-CREATE USER hips_admin WITH PASSWORD '1234';
-
-CREATE DATABASE hips_db OWNER hips_admin;
-
-\c hips_db
-
-CREATE TABLE alarmas (
+CREATE TABLE IF NOT EXISTS alarmas (
     id SERIAL PRIMARY KEY,
     timestamp TIMESTAMP NOT NULL,
     tipo_alarma VARCHAR(100) NOT NULL,
@@ -15,7 +9,7 @@ CREATE TABLE alarmas (
     usuario_affected VARCHAR(100)
 );
 
-CREATE TABLE acciones_prevencion (
+CREATE TABLE IF NOT EXISTS acciones_prevencion (
     id SERIAL PRIMARY KEY,
     alarma_id INTEGER REFERENCES alarmas (id),
     accion VARCHAR(100) NOT NULL,
@@ -25,7 +19,7 @@ CREATE TABLE acciones_prevencion (
     duracion_bloqueo INTEGER
 );
 
-CREATE TABLE usuarios_web (
+CREATE TABLE IF NOT EXISTS usuarios_web (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
@@ -35,7 +29,7 @@ CREATE TABLE usuarios_web (
     logins_fallidos INTEGER DEFAULT 0
 );
 
-CREATE TABLE configuracion_modulos (
+CREATE TABLE IF NOT EXISTS configuracion_modulos (
     id SERIAL PRIMARY KEY,
     modulo VARCHAR(100) NOT NULL,
     parametro VARCHAR(100) NOT NULL,
@@ -43,7 +37,7 @@ CREATE TABLE configuracion_modulos (
     activo BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE excepciones_ip (
+CREATE TABLE IF NOT EXISTS excepciones_ip (
     id SERIAL PRIMARY KEY,
     ip_permitida INET NOT NULL,
     modulo_excluido VARCHAR(100),
@@ -52,7 +46,7 @@ CREATE TABLE excepciones_ip (
     creado_por VARCHAR(100)
 );
 
-CREATE TABLE historico_sesiones (
+CREATE TABLE IF NOT EXISTS historico_sesiones (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES usuarios_web (id),
     ip_conexion INET,
@@ -63,5 +57,7 @@ CREATE TABLE historico_sesiones (
 );
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hips_admin;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT ALL ON TABLES TO hips_admin;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hips_admin;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO hips_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO hips_admin;
