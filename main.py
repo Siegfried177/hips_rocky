@@ -231,7 +231,7 @@ def system_init():
             
         time.sleep(10)
     
-
+''''''
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 app = app.create_app()
 print("[*] Iniciando aplicación web en http://0.0.0.0:5000")
