@@ -1,3 +1,4 @@
+from alerts.logger import register_prevention_action
 from prevention import mail_handler
 from prevention.rules_loader import load_rules
 from prevention.firewall import block_ip
@@ -8,19 +9,13 @@ from db.repository import insert_prevention_action
 ACTION_MAP = {
     "BLOCK_IP": lambda data: block_ip(data),
     "KILL_PROCESS": lambda data: kill_process(name = data.get("process")),
-    "DISABLE_PROMISC": lambda data: disable_promisc(data.get("interface")),
-    "BLOCK_MAIL_TRAFFIC": lambda data: mail_handler.block_mail_ports(),
-    "FLUSH_MAIL_QUEUE": lambda data: mail_handler.flush_mail_queue(),
-    "STOP_MAIL_SERVICE": lambda data: mail_handler.stop_mail_service()
+    "DISABLE_PROMISC": lambda data: disable_promisc(data.get("interface"))
 }
 
 COMMAND_DESC_MAP = {
     "BLOCK_IP": lambda data: f"firewall-cmd --add-rich-rule='rule family=ipv4 source address={data} reject'",
     "KILL_PROCESS": lambda data: f"pkill -9 -f {data.get('process')}",
-    "DISABLE_PROMISC": lambda data: f"ip link set {data.get('interface')} promisc off",
-    "BLOCK_MAIL_TRAFFIC": lambda data: "firewall-cmd --add-rich-rule (Puertos 25, 465, 587)",
-    "FLUSH_MAIL_QUEUE": lambda data: "postsuper -d ALL",
-    "STOP_MAIL_SERVICE": lambda data: "systemctl stop postfix"
+    "DISABLE_PROMISC": lambda data: f"ip link set {data.get('interface')} promisc off"
 }
 
 # Central IPS prevention engine that executes actions based on alarm types
@@ -54,7 +49,14 @@ def execute_action(alarm_type, data, alarm_id = None):
             comando_ejecutado = comando_real,
             duracion_bloqueo = 0
         )
-
+        
+        register_prevention_action(
+            alarma_id = alarm_id,
+            action_type = action,
+            success = success,
+            details = {"command": comando_real, "message": msg}
+        )
+        
         results.append((success, msg))
 
     all_success = all(r[0] for r in results if r)

@@ -1,7 +1,15 @@
 from functools import wraps
-from flask import Flask, app, render_template, request, redirect, session, url_for
-from db.repository import get_all_alarms, get_module_config, update_module_config, verify_user
+from flask import Flask, render_template, request, redirect, session, url_for
+from db.repository import get_all_alarms, get_module_config, update_module_config, verify_user, create_user, get_all_users, update_user, delete_user, get_user_by_id
 from web.routes.alarms import alarms_bp
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "role" not in session or session["role"] != "admin":
+            return redirect("/")
+        return f(*args, **kwargs)
+    return wrapper
 
 def login_required(f):
     @wraps(f)
@@ -60,7 +68,6 @@ def create_app():
     @app.route("/config", methods=["GET", "POST"])
     @login_required
     def config():
-
         MODULES = {
             "process_monitor": "Monitor de Procesos",
             "tmp_monitor": "Monitor de Archivos Temporales",
@@ -109,4 +116,45 @@ def create_app():
             modules=MODULES
         )
 
+    @app.route("/users", methods=["GET", "POST"])
+    @login_required
+    @admin_required
+    def users_page():
+        if request.method == "POST":
+
+            action = request.form.get("action")
+
+            # ================= CREATE USER =================
+            if action == "create":
+                username = request.form.get("username")
+                password = request.form.get("password")
+
+                if username and username != "admin" and password:
+                    create_user(username, password, "user")
+
+                return redirect("/users")
+
+            # ================= UPDATE / DELETE =================
+            user_id = request.form.get("user_id")
+
+            user = get_user_by_id(user_id)
+
+            if not user or user[2] == "admin":
+                return redirect("/users")
+
+            if action == "delete":
+                delete_user(user_id)
+
+            if action == "update":
+                username = request.form.get("username")
+                role = request.form.get("role")
+
+                if role != "admin":
+                    update_user(user_id, username, role)
+
+            return redirect("/users")
+
+        users = get_all_users()
+        return render_template("users.html", users=users)
+    
     return app

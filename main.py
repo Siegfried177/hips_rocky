@@ -16,7 +16,7 @@ from web import app
 
 # Capa de persistencia/logs
 from db.repository import insert_prevention_action
-from alerts.logger import register_alarm 
+from alerts.logger import register_alarm, register_prevention_action 
 
 # Módulos de la carpeta detection
 from detection.access_monitor import detect_bruteforce
@@ -147,6 +147,32 @@ def system_init():
         try:
         
             # ==========================================
+            # MÓDULO 1: Integridad de Archivos 
+            # ==========================================
+            alarm_id, data = check_integrity()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de Integridad detectada en el archivo {data}")
+
+                success, command = handle_file_tampering(data)
+                
+                register_prevention_action(
+                    alarma_id = alarm_id,
+                    action_type = "ARCHIVO_MODIFICADO_EN_CUARENTENA",
+                    success = success,
+                    details = {"command": command, "message": "Archivo en cuarentena o eliminado"}
+                )
+                
+                insert_prevention_action(
+                    alarma_id = alarm_id,
+                    accion = "ALERTA_INTEGRIDAD",
+                    resultado = "EXITO" if success else "FALLIDO",
+                    comando_ejecutado = command,
+                    duracion_bloqueo = None
+                )
+        
+        
+            # ==========================================
             # MÓDULO 2: Monitoreo de Usuarios (UID 0)
             # ==========================================
             alarm_id_u, username_u = detect_uid_zero_escalation()
@@ -164,6 +190,13 @@ def system_init():
                     duracion_bloqueo = None
                 )
 
+
+            # ==========================================
+            # MÓDULO 3: Detector de Sniffers
+            # ==========================================
+            run_sniffer_detection()
+    
+    
             # ==========================================
             # MÓDULO 4: Analizador de Logs Web
             # ==========================================
@@ -179,53 +212,111 @@ def system_init():
                     duracion_bloqueo = None
                 )
             
+            
+            # ==========================================
+            # MÓDULO 5: Cola de Correos 
+            # ==========================================
+            alarm_id, data = run_mail_queue_detection()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de Cola de Correos detectada, tamaño: {data}")
+                ALARM_ACTIONS =[stop_mail_service, block_mail_ports, flush_mail_queue]
+
+                for action in ALARM_ACTIONS:
+                    success, command = action()
+
+                    if action == stop_mail_service: action_upper = "STOP_MAIL_SERVICE"
+                    elif action == block_mail_ports: action_upper = "BLOCK_MAIL_PORTS"
+                    else: action_upper = "FLUSH_MAIL_QUEUE"
+
+                    register_prevention_action(
+                        alarma_id = alarm_id,
+                        action_type = action_upper,
+                        success = success,
+                        details = {"command": command, "message": "Acción ejecutada para mitigar la amenaza en la cola de correos"}
+                    )
+
+                    insert_prevention_action(
+                        alarma_id = alarm_id,
+                        accion = action_upper,
+                        resultado = "EXITO" if success else "FALLIDO",
+                        comando_ejecutado = command,
+                        duracion_bloqueo = None
+                    )
+            
+            
             # ==========================================
             # MÓDULO 6: Monitoreo de Procesos Sospechosos
             # ==========================================
-            alarm_id_p, pid_p = detect_suspicious_processes()
-            if alarm_id_p and pid_p:
-                print(f"[!] Proceso malicioso detectado corriendo en directorio temporal. PID: {pid_p}")
-                success_p, command_p = kill_process(pid=pid_p)
-                insert_prevention_action(
-                    alarma_id = alarm_id_p,
-                    accion = "KILL_PROCESO_TEMPORAL",
-                    resultado = "EXITO" if success_p else "FALLIDO",
-                    comando_ejecutado = command_p,
-                    duracion_bloqueo = None
-                )
+            alarm_id, data = run_mail_queue_detection()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de Cola de Correos detectada, tamaño: {data}")
+                ALARM_ACTIONS =[stop_mail_service, block_mail_ports, flush_mail_queue]
+
+                for action in ALARM_ACTIONS:
+                    success, command = action()
+
+                    if action == stop_mail_service:
+                        action_upper = "STOP_MAIL_SERVICE"
+                    elif action == block_mail_ports:
+                        action_upper = "BLOCK_MAIL_PORTS"
+                    else:
+                        action_upper = "FLUSH_MAIL_QUEUE"
+
+                    insert_prevention_action(
+                        alarma_id = alarm_id,
+                        accion = action_upper,
+                        resultado = "EXITO" if success else "FALLIDO",
+                        comando_ejecutado = command,
+                        duracion_bloqueo = None
+                    )
+
 
             # ==========================================
             # MÓDULO 7: Monitoreo de Archivos Temporales (/tmp)
             # ==========================================
-            alarm_id_t, file_path_t = detect_suspicious_tmp_files()
-            if alarm_id_t and file_path_t:
-                print(f"[!] Archivo peligroso detectado en directorio temporal: {file_path_t}")
-                success_t, command_t = quarantine_or_delete_tmp_file(file_path_t)
-                insert_prevention_action(
-                    alarma_id = alarm_id_t,
-                    accion = "ELIMINAR_ARCHIVO_TMP",
-                    resultado = "EXITO" if success_t else "FALLIDO",
-                    comando_ejecutado = command_t,
-                    duracion_bloqueo = None
-                )
+            alarm_id, data = detect_ddos()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de DDOS detectada desde la IP {data}")
+
+                execute_action("DDOS_DETECTADO", data, alarm_id)
+
+
+            # ==========================================
+            # MÓDULO 8: Detector de DDOS
+            # ==========================================
+            alarm_id, data = detect_ddos()
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de DDOS detectada desde la IP {data}")
+
+                execute_action(alarm_type = "DDOS_DETECTADO", data = data, alarm_id = alarm_id)
+
 
             # ==========================================
             # MÓDULO 9: Monitoreo de Cron Estructurado 
             # ==========================================
-            for user in pwd.getpwall():
-                alarm_id_c, username_c = detect_malicious_cron(user.pw_name)
-                if alarm_id_c and username_c:
-                    print(f"[!] Persistencia maliciosa detectada en crontab del usuario: {username_c}")
-                    success_c, command_c = remove_malicious_cron_entry(username_c, signature_keyword="bash")
-                    insert_prevention_action(
-                        alarma_id = alarm_id_c,
-                        accion = "LIMPIEZA_CRON",
-                        resultado = "EXITO" if success_c else "FALLIDO",
-                        comando_ejecutado = command_c,
-                        duracion_bloqueo = None
-                    )
-                    break
+            alarm_id, data = detect_bruteforce(SECURE_LOG)
             
+            if alarm_id and data:
+                print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
+
+                execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id= alarm_id,data = data)
+
+
+# ==========================================
+            # MÓDULO 10: Intentos de Acceso Repetidos
+            # ==========================================
+            alarm_id, data = detect_bruteforce(SECURE_LOG)
+            
+            if alarm_id and data:
+                print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
+
+                execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id = alarm_id, data = data)
+
+
         except Exception as e:
             print(f"[-] Error en el bucle principal: {e}")
             
@@ -234,7 +325,8 @@ def system_init():
 ''''''
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 app = app.create_app()
-print("[*] Iniciando aplicación web en http://0.0.0.0:5000")
+print("[*] WEB URL: http://0.0.0.0:5000")
+
 
 if __name__ == "__main__":
     t = threading.Thread(target=system_init, daemon=True)
