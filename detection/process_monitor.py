@@ -24,7 +24,7 @@ def detect_suspicious_processes():
             continue
         except psutil.AccessDenied:
             print(f"[-] Acceso denegado al leer detalles de un proceso.")
-        except psutil.ZombieProccess:
+        except psutil.ZombieProcess:
             continue
         except Exception as e:
             print(f"[-] Error inesperado en mod_proccess_monitor: {e}")
