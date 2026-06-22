@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Usuarios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h2>User Management</h2>
+
+    <!-- ================= CREATE USER ================= -->
+    <h4>Create New User</h4>
+
+    <form method="POST">
+
+        <input type="hidden" name="action" value="create">
+
+        <label>Username:</label>
+        <input type="text" name="username" required>
+
+        <label>Password:</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Create</button>
+
+    </form>
+
+    <hr>
+    <hr>
+
+    <!-- ================= USERS TABLE ================= -->
+    <table border="1" cellpadding="5">
+
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for user in users %}
+        <tr>
+
+            <form method="POST">
+
+                <td>
+                    {{ user[0] }}
+                    <input type="hidden" name="user_id" value="{{ user[0] }}">
+                </td>
+
+                <td>
+                    {% if user[2] != 'admin' %}
+                    <input type="text" name="username" value="{{ user[1] }}">
+                    {% else %}
+                    {{ user[1] }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if user[2] != 'admin' %}
+                    user
+                    <input type="hidden" name="role" value="user">
+                    {% else %}
+                    admin
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if user[2] != 'admin' %}
+
+                    <button type="submit" name="action" value="update">
+                        Save
+                    </button>
+
+                    <button type="submit" name="action" value="delete" onclick="return confirm('Delete user?')">
+                        Delete
+                    </button>
+
+                    {% else %}
+                    Protected
+                    {% endif %}
+                </td>
+
+            </form>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</body>
+
+</html>

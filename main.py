@@ -12,16 +12,16 @@ from web import app
 
 # Capa de persistencia/logs
 from db.repository import insert_prevention_action
-from alerts.logger import register_alarm 
+from alerts.logger import register_alarm, register_prevention_action 
 
 # Módulos de la carpeta detection
-from detection.access_monitor import detect_bruteforce
-from detection.users_monitor import detect_uid_zero_escalation
+#from detection.access_monitor import detect_bruteforce
+#from detection.users_monitor import detect_uid_zero_escalation
 from detection.sniffer_detect import run_sniffer_detection
 from detection.log_analyzer import analyze_logs
-from detection.process_monitor import detect_suspicious_processes
-from detection.cron_monitor import detect_malicious_cron
-from detection.tmp_monitor import detect_suspicious_tmp_files
+#from detection.process_monitor import detect_suspicious_processes
+#from detection.cron_monitor import detect_malicious_cron
+#from detection.tmp_monitor import detect_suspicious_tmp_files
 from detection.file_integrity import check_integrity
 from detection.ddos_detect import detect_ddos
 from detection.mail_queue import run_mail_queue_detection
@@ -47,7 +47,14 @@ def system_init():
                 print(f"[!] Alerta de Integridad detectada en el archivo {data}")
 
                 success, command = handle_file_tampering(data)
-
+                
+                register_prevention_action(
+                    alarma_id = alarm_id,
+                    action_type = "ARCHIVO_MODIFICADO_EN_CUARENTENA",
+                    success = success,
+                    details = {"command": command, "message": "Archivo en cuarentena o eliminado"}
+                )
+                
                 insert_prevention_action(
                     alarma_id = alarm_id,
                     accion = "ALERTA_INTEGRIDAD",
@@ -75,12 +82,16 @@ def system_init():
                 for action in ALARM_ACTIONS:
                     success, command = action()
 
-                    if action == stop_mail_service:
-                        action_upper = "STOP_MAIL_SERVICE"
-                    elif action == block_mail_ports:
-                        action_upper = "BLOCK_MAIL_PORTS"
-                    else:
-                        action_upper = "FLUSH_MAIL_QUEUE"
+                    if action == stop_mail_service: action_upper = "STOP_MAIL_SERVICE"
+                    elif action == block_mail_ports: action_upper = "BLOCK_MAIL_PORTS"
+                    else: action_upper = "FLUSH_MAIL_QUEUE"
+
+                    register_prevention_action(
+                        alarma_id = alarm_id,
+                        action_type = action_upper,
+                        success = success,
+                        details = {"command": command, "message": "Acción ejecutada para mitigar la amenaza en la cola de correos"}
+                    )
 
                     insert_prevention_action(
                         alarma_id = alarm_id,
@@ -99,7 +110,7 @@ def system_init():
             if alarm_id and data:
                 print(f"[!] Alerta de DDOS detectada desde la IP {data}")
 
-                execute_action("DDOS_DETECTADO", data, alarm_id)
+                execute_action(alarm_type = "DDOS_DETECTADO", data = data, alarm_id = alarm_id)
 
 
 # ==========================================
@@ -110,18 +121,18 @@ def system_init():
             if alarm_id and data:
                 print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
 
-                execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id= alarm_id,data = data)
+                execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id = alarm_id, data = data)
 
 
-        except Exception as e:
-            print(f"[-] Error en el bucle principal: {e}")
+        except Exception as e: print(f"[-] Error en el bucle principal: {e}")
             
         time.sleep(10)
     
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 app = app.create_app()
-print("[*] Iniciando aplicación web en http://0.0.0.0:5000")
+print("[*] WEB URL: http://0.0.0.0:5000")
+
 
 if __name__ == "__main__":
     t = threading.Thread(target=system_init, daemon=True)

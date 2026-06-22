@@ -204,3 +204,66 @@ def verify_user(username, password):
         return user
 
     return None
+
+# Function to retrieve all users
+def get_all_users():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, username, rol FROM usuarios_web")
+    users = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return users
+
+# Function to retrieve a user by ID
+def get_user_by_id(user_id):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id, username, rol FROM usuarios_web WHERE id = %s",
+        (user_id,)
+    )
+
+    user = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return user
+
+# Function to update a user
+def update_user(user_id, username, role):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE usuarios_web
+        SET username = %s, rol = %s
+        WHERE id = %s
+        AND role != 'admin'
+    """, (username, role, user_id))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+# Function to delete a user
+def delete_user(user_id):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        DELETE FROM usuarios_web
+        WHERE id = %s
+        AND rol != 'admin'
+    """, (user_id,))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()

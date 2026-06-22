@@ -2,22 +2,31 @@ import smtplib
 from email.mime.text import MIMEText
 
 MAILS_SUBJECT = {
-                    "sniffer_detect": "Intrusión por Captura de Paquetes Detectada",
-                    "mail_queue": "Alerta de Cola de Correos",
-                    "ddos_detect": "DDOS Detectado",
-                    }
+"ARCHIVO_MODIFICADO_EN_CUARENTENA": "Alerta Crítica: Integridad del Sistema Comprometida",
+"KILL_PROCESS": "Alerta de Seguridad: Sesión Sospechosa Detectada",
+"BLOCK_IP": "Alerta Crítica: Captura de Paquetes Detectada",
+"DISABLE_PROMISC": "Advertencia: Actividad Sospechosa en Logs",
+"STOP_MAIL_SERVICE": "Advertencia: Anomalía en Cola de Correos",
+"BLOCK_MAIL_PORTS": "Advertencia: Anomalía en Cola de Correos",
+"FLUSH_MAIL_QUEUE": "Advertencia: Anomalía en Cola de Correos",
+}
 
 MAILS_BODY = {
-                "sniffer_detect":"Alerta Crítica: El módulo de red detectó la ejecución ilícita de herramientas de snifffers o una mutación a modo promiscuo.\nAcción de prevención: Proceso eliminado del sistema y banderas de red restauradas de inmediato a su estado seguro.",
-                "mail_queue": ""
-                }
+"ARCHIVO_MODIFICADO_EN_CUARENTENA": "Se detectaron modificaciones no autorizadas en archivos críticos del sistema.\nAcción: Verificar y restaurar integridad.",
+"KILL_PROCESS": "Se detectó una sesión desde origen u horario inusual.\nAcción: Revisar y, si corresponde, finalizar la sesión.",
+"BLOCK_IP": "Acción: Se ha bloqueado una IP sospechosa.",
+"DISABLE_PROMISC": "Se identificó una interfaz en modo promiscuo.\nAcción: Interfaz desactivada.",
+"STOP_MAIL_SERVICE": "Acción: Se ha detenido el servicio de correo.",
+"BLOCK_MAIL_PORTS": "Acción: Se han bloqueado los puertos de correo.",
+"FLUSH_MAIL_QUEUE": "Acción: Se ha vaciado la cola de correo.",
+}
 
 # Function to send email alerts to the admin
-def send_email_to_admin(alarm):
+def send_email_to_admin(prevention):
     sender = "hips@system.local"
-    receiver = "admin@company.com"
-    subject = f"[HIPS ALERTA] - {MAILS_SUBJECT.get(alarm['module'])}"
-    body = MAILS_BODY[alarm['module']]
+    receiver = "root"
+    subject = f"[PREVENCIÓN AUTOMÁTICA DE SEGURIDAD REALIZADA] - {MAILS_SUBJECT.get(prevention['action_type'])}"
+    body = MAILS_BODY[prevention['action_type']]
 
     msg = MIMEText(body)
     msg["Subject"] = subject
