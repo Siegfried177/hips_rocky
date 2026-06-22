@@ -7,7 +7,7 @@ Accede como usuario administrador o root y posiciónate en el directorio `/root`
 
 ```
 cd /root
-git clone [https://github.com/tu_usuario/hips_rocky.git](https://github.com/tu_usuario/hips_rocky.git)
+git clone https://github.com/Siegfried177/hips_rocky.git
 cd hips_rocky
 ```
 
