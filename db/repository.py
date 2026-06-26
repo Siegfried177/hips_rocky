@@ -2,7 +2,7 @@ from db.connection import get_connection
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Helper function to parse a value from string to bool
+# Helper function to parse a value from string to bool or int
 def parse_value(value):
     if value.isdigit():
         return int(value)
@@ -267,3 +267,56 @@ def delete_user(user_id):
 
     cur.close()
     conn.close()
+    
+    # Function to retrieve a configuration value by parameter and active flag
+
+# Function to retrieve configuration value and active flag by parameter
+def get_config_value(parametro):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT valor, activo
+        FROM configuracion_modulos
+        WHERE parametro = %s
+        LIMIT 1;
+    """
+
+    cur.execute(query, (parametro))
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not row:
+        return None
+
+    valor, activo_db = row
+
+    return parse_value(valor), activo_db
+
+
+def get_module_value(modulo):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT activo
+        FROM configuracion_modulos
+        WHERE modulo = %s
+        AND parametro = 'activo'
+        LIMIT 1;
+    """
+
+    cur.execute(query, (modulo))
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if not row:
+        return None
+
+    activo_db = row
+
+    return parse_value(activo_db)

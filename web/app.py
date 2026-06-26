@@ -89,18 +89,28 @@ def create_app():
                 for item in module_config:
                     parametro = item["parametro"]
 
-                    value_key = f"value_{module}_{parametro}"
-                    active_key = f"active_{module}_{parametro}"
+                    if parametro == "activo":
+                        continue 
 
+                    value_key = f"value_{module}_{parametro}"
                     valor = request.form.get(value_key)
-                    activo = active_key in request.form
 
                     update_module_config(
                         module=module,
                         parameter=parametro,
                         value=valor,
-                        active=activo
+                        active=True  
                     )
+
+                active_key = f"active_{module}"
+                is_active = request.form.get(active_key) == "on"
+
+                update_module_config(
+                    module=module,
+                    parameter="activo",
+                    value="1",
+                    active=is_active
+                )
 
             return redirect("/config")
 

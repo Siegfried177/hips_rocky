@@ -29,14 +29,24 @@
                     <tr>
                         <td>{{ p.parametro }}</td>
 
+                        <!-- VALUE -->
                         <td>
+                            {% if p.parametro != 'activo' %}
                             <input type="text" name="value_{{ module_name }}_{{ p.parametro }}" value="{{ p.valor }}">
+                            {% else %}
+                            -
+                            {% endif %}
                         </td>
 
+                        <!-- ACTIVE CHECKBOX -->
                         <td>
-                            <input type="checkbox" name="active_{{ module_name }}_{{ p.parametro }}" {% if p.activo %}checked{%
-                                endif %}>
+                            {% if p.parametro == 'activo' %}
+                            <input type="checkbox" name="active_{{ module_name }}" {% if p.valor %}checked{% endif %}>
+                            {% else %}
+                            -
+                            {% endif %}
                         </td>
+
                     </tr>
                     {% endfor %}
 

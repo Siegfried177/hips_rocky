@@ -29,6 +29,7 @@ def create_baseline():
     baseline = {
         "/etc/passwd": calculate_hash("/etc/passwd"),
         "/etc/shadow": calculate_hash("/etc/shadow"),
+        "/home/test" : calculate_hash("/home/test")
     }
 
     with open(BASELINE_FILE, "w") as f:
@@ -43,8 +44,14 @@ def check_integrity():
         baseline = json.load(f)
 
     for file_path, original_hash in baseline.items():
-        if not os.path.isfile(file_path): continue
-        
+        if not os.path.isfile(file_path):
+            alarm_id = register_alarm(
+                alarm_type="FILE_MISSING",
+                module="mod_file_integrity",
+                message=f"El archivo {file_path} no existe"
+            )
+            continue
+            
         current_hash = calculate_hash(file_path)
         if current_hash is None or original_hash is None: continue
         

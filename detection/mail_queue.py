@@ -2,8 +2,7 @@
 import subprocess
 import re
 from alerts.logger import register_alarm
-
-DEFAULT_THRESHOLD = 50 # Default threshold for mail queue size
+from db.repository import get_config_value
 
 # Get the size of the mail queue
 def get_mail_queue_size():
@@ -19,10 +18,12 @@ def get_mail_queue_size():
     return 0
 
 # Run the mail queue detection and register an alarm if the queue size exceeds the threshold
-def run_mail_queue_detection(threshold = DEFAULT_THRESHOLD):
+def run_mail_queue_detection():
     queue_size = get_mail_queue_size()
+    
+    THRESHOLD = get_config_value("MAIL_QUEUE_THRESHOLD")[0]
 
-    if queue_size >= threshold:
+    if queue_size >= THRESHOLD:
         print(f"[!] Alerta: Cola de correo saturada con {queue_size} mensajes.")
         alarm_id = register_alarm(
             alarm_type="MAIL_QUEUE_ALTA",
