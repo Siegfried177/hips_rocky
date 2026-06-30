@@ -90,25 +90,28 @@ def create_app():
                     parametro = item["parametro"]
 
                     if parametro == "activo":
-                        continue 
+                        continue
 
                     value_key = f"value_{module}_{parametro}"
                     valor = request.form.get(value_key)
+
+                    if valor is not None:
+                        valor = int(valor)
 
                     update_module_config(
                         module=module,
                         parameter=parametro,
                         value=valor,
-                        active=True  
+                        active=True
                     )
 
                 active_key = f"active_{module}"
-                is_active = request.form.get(active_key) == "on"
+                is_active = active_key in request.form
 
                 update_module_config(
                     module=module,
                     parameter="activo",
-                    value="1",
+                    value=1 if is_active else 0,
                     active=is_active
                 )
 

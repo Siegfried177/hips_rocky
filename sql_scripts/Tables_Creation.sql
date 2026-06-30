@@ -56,6 +56,23 @@ CREATE TABLE IF NOT EXISTS historico_sesiones (
     token_sesion TEXT
 );
 
+
+INSERT INTO configuracion_modulos (id, modulo, parametro, valor, activo) VALUES
+(1,  'process_monitor',   'activo', '1', TRUE),
+(2,  'tmp_monitor',       'activo', '1', TRUE),
+(3,  'cron_monitor',      'activo', '1', TRUE),
+(4,  'file_integrity',    'activo', '1', TRUE),
+(5,  'sniffer_detect',    'activo', '1', TRUE),
+(6,  'users_monitor',     'activo', '1', TRUE),
+(7,  'access_monitor',    'activo', '1', TRUE),
+(8,  'log_analyzer',      'activo', '1', TRUE),
+(9,  'mail_queue',        'activo', '1', TRUE),
+(10, 'ddos_detect',       'activo', '1', TRUE),
+(11, 'access_monitor',    'ACCESS_THRESHOLD', '10', TRUE),
+(12, 'mail_queue',        'MAIL_QUEUE_THRESHOLD', '10', TRUE),
+(13, 'access_monitor',    'ACCESS_WINDOW', '10', TRUE);
+
+
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hips_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hips_admin;
 

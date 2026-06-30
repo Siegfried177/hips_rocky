@@ -38,8 +38,8 @@ def detect_bruteforce(file_path):
     alerted_ips = set()
     detected_ip = None
 
-    ACCESS_THRESHOLD = get_config_value("THRESHOLD")[0] # Number of failed attempts to trigger alarm
-    ACCESS_WINDOW = timedelta(minutes = get_config_value("WINDOW")[0]) # Time window to detect repeated attempts
+    ACCESS_THRESHOLD = get_config_value("ACCESS_THRESHOLD")[0] # Number of failed attempts to trigger alarm
+    ACCESS_WINDOW = timedelta(minutes = get_config_value("ACCESS_WINDOW")[0]) # Time window to detect repeated attempts
 
     for ip, ts in events:
         ip_dict[ip].append(ts)

@@ -282,7 +282,7 @@ def get_config_value(parametro):
         LIMIT 1;
     """
 
-    cur.execute(query, (parametro))
+    cur.execute(query, (parametro,))
     row = cur.fetchone()
 
     cur.close()
@@ -308,7 +308,7 @@ def get_module_value(modulo):
         LIMIT 1;
     """
 
-    cur.execute(query, (modulo))
+    cur.execute(query, (modulo,))
     row = cur.fetchone()
 
     cur.close()
@@ -319,4 +319,4 @@ def get_module_value(modulo):
 
     activo_db = row
 
-    return parse_value(activo_db)
+    return activo_db
