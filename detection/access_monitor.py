@@ -2,11 +2,17 @@
 import re
 from datetime import datetime, timedelta
 from collections import defaultdict
+import subprocess
 from alerts.logger import register_alarm
 from db.repository import get_config_value
+from prevention.firewall import load_blocklist
 
 FAILED_REGEX = re.compile(r"Failed password for (?:invalid user )?\S+ from (\d+\.\d+\.\d+\.\d+)") # Regular expression to match failed password attempts
 WHITELIST = set()
+
+def is_ip_blocked(ip):
+    result = subprocess.run(["iptables", "-L"], capture_output=True, text=True)
+    return ip in result.stdout
 
 # Parse secure log for failed password attempts and extract IPs and timestamps
 def parse_secure_log(file_path):
@@ -35,7 +41,7 @@ def parse_secure_log(file_path):
 def detect_bruteforce(file_path):
     events = parse_secure_log(file_path)
     ip_dict = defaultdict(list)
-    alerted_ips = set()
+    alerted_ips = load_blocklist()
     detected_ip = None
 
     ACCESS_THRESHOLD = get_config_value("ACCESS_THRESHOLD")[0] # Number of failed attempts to trigger alarm
@@ -47,6 +53,8 @@ def detect_bruteforce(file_path):
     for ip, timestamps in ip_dict.items():
         if ip in WHITELIST: 
             continue
+        if is_ip_blocked(ip):
+            continue
         
         timestamps.sort()
         start = 0
@@ -54,7 +62,7 @@ def detect_bruteforce(file_path):
         for end in range(len(timestamps)):
             while timestamps[end] - timestamps[start] > ACCESS_WINDOW:
                 start += 1
-
+            
             attempts = end - start + 1
 
             if attempts >= ACCESS_THRESHOLD and ip not in alerted_ips:

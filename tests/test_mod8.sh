@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG="/tmp/dns_test.log"
+LOG="/var/log/dns.log"
 
 echo "[+] Cleaning old log"
 rm -f "$LOG"
@@ -19,15 +19,4 @@ echo "[+] Generating medium traffic (2.2.2.2)..."
 for i in {1..80}; do
     echo "2.2.2.2 normal_$i" >> "$LOG"
 done
-
-echo "[+] Running detector..."
-python3 - <<EOF
-from your_module import detect_ddos
-
-alarm_id, ip = detect_ddos("$LOG")
-
-print("ALARM:", alarm_id)
-print("BLOCKED IP:", ip)
-EOF
-
 echo "[+] Done"

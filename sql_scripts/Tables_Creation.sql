@@ -70,7 +70,8 @@ INSERT INTO configuracion_modulos (id, modulo, parametro, valor, activo) VALUES
 (10, 'ddos_detect',       'activo', '1', TRUE),
 (11, 'access_monitor',    'ACCESS_THRESHOLD', '10', TRUE),
 (12, 'mail_queue',        'MAIL_QUEUE_THRESHOLD', '10', TRUE),
-(13, 'access_monitor',    'ACCESS_WINDOW', '10', TRUE);
+(13, 'access_monitor',    'ACCESS_WINDOW', '10', TRUE),
+(14, 'ddos_detect', 'DDOS_THRESHOLD', '10', TRUE );
 
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO hips_admin;

@@ -302,8 +302,6 @@ def system_init():
                 print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
 
                 execute_action(alarm_type = 'ACCESO_INVALIDO_REPETIDO', alarm_id= alarm_id,data = data)
-
-            break
             
         except Exception as e:
             print(f"[-] Error en el bucle principal: {e}")
