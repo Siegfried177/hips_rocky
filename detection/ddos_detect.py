@@ -2,11 +2,12 @@
 from collections import defaultdict
 import os
 from alerts.logger import register_alarm
+from db.repository import get_config_value
 
-THRESHOLD = 100 # Number of requests from an IP to trigger alarm
 DNS_LOG_PATH = "/var/log/dns.log"
 BLOCKLIST_PATH = "/var/lib/hips/blocked_ips.txt"
 
+# Function to load blocked IPs from file
 def load_blocklist():
     """Load blocked IPs from file into a set"""
     if not os.path.exists(BLOCKLIST_PATH):
@@ -15,7 +16,7 @@ def load_blocklist():
     with open(BLOCKLIST_PATH, "r") as f:
         return set(line.strip() for line in f if line.strip())
 
-
+# Function to persist a newly blocked IP
 def save_to_blocklist(ip):
     """Persist a newly blocked IP"""
     os.makedirs(os.path.dirname(BLOCKLIST_PATH), exist_ok=True)
@@ -23,9 +24,15 @@ def save_to_blocklist(ip):
     with open(BLOCKLIST_PATH, "a") as f:
         f.write(f"{ip}\n")
 
-
+# Function to parse the DNS log file
 def parse_dns_log(file_path):
     ip_counter = defaultdict(int)
+
+    # Create file if it does not exist
+    if not os.path.exists(file_path):
+        print(f"[+] Log file not found, creating: {file_path}")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        open(file_path, "w").close()
 
     try:
         with open(file_path, "r") as f:
@@ -35,18 +42,20 @@ def parse_dns_log(file_path):
                 if not parts:
                     continue
 
-                ip = parts[0] 
+                ip = parts[0]
                 ip_counter[ip] += 1
-                
-    except FileNotFoundError:
-        print(f"[-] Archivo de trazas de red no encontrado: {file_path}")
+
+    except Exception as e:
+        print(f"[-] Error reading log file: {e}")
 
     return ip_counter
 
-
+# Function to detect DDoS
 def detect_ddos(file_path=DNS_LOG_PATH):
     ip_counts = parse_dns_log(file_path)
     blocked_ips = load_blocklist()
+
+    THRESHOLD = get_config_value("DDOS_THRESHOLD")[0]
 
     for ip, count in ip_counts.items():
 

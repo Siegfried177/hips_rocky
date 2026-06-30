@@ -3,10 +3,9 @@ import re
 from datetime import datetime, timedelta
 from collections import defaultdict
 from alerts.logger import register_alarm
+from db.repository import get_config_value
 
 FAILED_REGEX = re.compile(r"Failed password for (?:invalid user )?\S+ from (\d+\.\d+\.\d+\.\d+)") # Regular expression to match failed password attempts
-THRESHOLD = 5 # Number of failed attempts to trigger alarm
-WINDOW = timedelta(minutes = 5) # Time window to consider for failed attempts
 WHITELIST = set()
 
 # Parse secure log for failed password attempts and extract IPs and timestamps
@@ -39,6 +38,9 @@ def detect_bruteforce(file_path):
     alerted_ips = set()
     detected_ip = None
 
+    ACCESS_THRESHOLD = get_config_value("ACCESS_THRESHOLD")[0] # Number of failed attempts to trigger alarm
+    ACCESS_WINDOW = timedelta(minutes = get_config_value("ACCESS_WINDOW")[0]) # Time window to detect repeated attempts
+
     for ip, ts in events:
         ip_dict[ip].append(ts)
 
@@ -50,12 +52,12 @@ def detect_bruteforce(file_path):
         start = 0
 
         for end in range(len(timestamps)):
-            while timestamps[end] - timestamps[start] > WINDOW:
+            while timestamps[end] - timestamps[start] > ACCESS_WINDOW:
                 start += 1
 
             attempts = end - start + 1
 
-            if attempts >= THRESHOLD and ip not in alerted_ips:
+            if attempts >= ACCESS_THRESHOLD and ip not in alerted_ips:
                 alerted_ips.add(ip)
                 
                 alarm_id = register_alarm(

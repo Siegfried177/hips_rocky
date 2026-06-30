@@ -15,7 +15,7 @@ from prevention.mail_handler import block_mail_ports, flush_mail_queue, stop_mai
 from web import app
 
 # Capa de persistencia/logs
-from db.repository import insert_prevention_action
+from db.repository import insert_prevention_action, get_module_value
 from alerts.logger import register_alarm 
 
 # Módulos de la carpeta detection
@@ -147,10 +147,10 @@ def system_init():
     
     while True:
         try:
-        	# ==========================================
+            # ==========================================
             # MÓDULO 1: Integridad de Archivos 
             # ==========================================
-            alarm_id, data = check_integrity()
+            alarm_id, data = check_integrity() if get_module_value("file_integrity") else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de Integridad detectada en el archivo {data}")
@@ -168,7 +168,8 @@ def system_init():
             # ==========================================
             # MÓDULO 2: Monitoreo de Usuarios (UID 0)
             # ==========================================
-            alarm_id_u, username_u = detect_uid_zero_escalation()
+            alarm_id_u, username_u = detect_uid_zero_escalation() if get_module_value("users_monitor") else (None, None)
+            
             if alarm_id_u and username_u:
                 print(f"[!] Escalación de privilegios detectada. Usuario malicioso UID 0: {username_u}")
                 kill_success, kill_cmd = kill_user_sessions(username_u)
@@ -186,12 +187,14 @@ def system_init():
             # ==========================================
             # MÓDULO 3: Detector de Sniffers
             # ==========================================
-            run_sniffer_detection()
+            if get_module_value("sniffer_detect"):
+                run_sniffer_detection()
 
             # ==========================================
             # MÓDULO 4: Analizador de Logs Web
             # ==========================================
-            alarm_id_l, target_l = analyze_logs(WEB_LOG)
+            alarm_id_l, target_l = analyze_logs(WEB_LOG) if get_module_value("log_analyzer") else (None, None)
+            
             if alarm_id_l and target_l:
                 print(f"[!] Ataque Web detectado (SQLi/Webshell) en {WEB_LOG}")
                 success_l, command_l = kill_process(name="httpd")
@@ -206,7 +209,7 @@ def system_init():
             # ==========================================
             # MÓDULO 5: Cola de Correos 
             # ==========================================
-            alarm_id, data = run_mail_queue_detection()
+            alarm_id, data = run_mail_queue_detection() if get_module_value("mail_queue") else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de Cola de Correos detectada, tamaño: {data}")
@@ -229,10 +232,12 @@ def system_init():
                         comando_ejecutado = command,
                         duracion_bloqueo = None
                     )
+                    
             # ==========================================
             # MÓDULO 6: Monitoreo de Procesos Sospechosos
             # ==========================================
-            alarm_id_p, pid_p = detect_suspicious_processes()
+            alarm_id_p, pid_p = detect_suspicious_processes() if get_module_value("process_monitor") else (None, None)
+            
             if alarm_id_p and pid_p:
                 print(f"[!] Proceso malicioso detectado corriendo en directorio temporal. PID: {pid_p}")
                 success_p, command_p = kill_process(pid=pid_p)
@@ -247,7 +252,8 @@ def system_init():
             # ==========================================
             # MÓDULO 7: Monitoreo de Archivos Temporales (/tmp)
             # ==========================================
-            alarm_id_t, file_path_t = detect_suspicious_tmp_files()
+            alarm_id_t, file_path_t = detect_suspicious_tmp_files() if get_module_value("tmp_monitor") else (None, None)
+            
             if alarm_id_t and file_path_t:
                 print(f"[!] Archivo peligroso detectado en directorio temporal: {file_path_t}")
                 success_t, command_t = quarantine_or_delete_tmp_file(file_path_t)
@@ -258,34 +264,39 @@ def system_init():
                     comando_ejecutado = command_t,
                     duracion_bloqueo = None
                 )
+                
             # ==========================================
             # MÓDULO 8: Detector de DDOS
             # ==========================================
-            alarm_id, data = detect_ddos()
+            alarm_id, data = detect_ddos() if get_module_value("ddos_detect") else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de DDOS detectada desde la IP {data}")
 
                 execute_action("DDOS_DETECTADO", data, alarm_id)
+            
             # ==========================================
             # MÓDULO 9: Monitoreo de Cron Estructurado 
             # ==========================================
-            for user in pwd.getpwall():
-                alarm_id_c, username_c = detect_malicious_cron(user.pw_name)
-                if alarm_id_c and username_c:
-                    print(f"[!] Persistencia maliciosa detectada en crontab del usuario: {username_c}")
-                    success_c, command_c = remove_malicious_cron_entry(username_c, signature_keyword="bash")
-                    insert_prevention_action(
-                        alarma_id = alarm_id_c,
-                        accion = "LIMPIEZA_CRON",
-                        resultado = "EXITO" if success_c else "FALLIDO",
-                        comando_ejecutado = command_c,
-                        duracion_bloqueo = None
-                    )
+            if get_module_value("cron_monitor"):
+                for user in pwd.getpwall():
+                    alarm_id_c, username_c = detect_malicious_cron(user.pw_name)
+                    
+                    if alarm_id_c and username_c:
+                        print(f"[!] Persistencia maliciosa detectada en crontab del usuario: {username_c}")
+                        success_c, command_c = remove_malicious_cron_entry(username_c, signature_keyword="bash")
+                        insert_prevention_action(
+                            alarma_id = alarm_id_c,
+                            accion = "LIMPIEZA_CRON",
+                            resultado = "EXITO" if success_c else "FALLIDO",
+                            comando_ejecutado = command_c,
+                            duracion_bloqueo = None
+                        )
+                    
 			# ==========================================
             # MÓDULO 10: Intentos de Acceso Repetidos
             # ==========================================
-            alarm_id, data = detect_bruteforce(SECURE_LOG)
+            alarm_id, data = detect_bruteforce(SECURE_LOG) if get_module_value("access_monitor") else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")
