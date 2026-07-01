@@ -24,7 +24,7 @@ MAILS_BODY = {
 # Function to send email alerts to the admin
 def send_email_to_admin(prevention):
     sender = "hips@system.local"
-    receiver = "admin@localhost"
+    receiver = "root@localhost"
     subject = f"[PREVENCIÓN AUTOMÁTICA DE SEGURIDAD REALIZADA] - {MAILS_SUBJECT.get(prevention['action_type'])}"
     body = MAILS_BODY[prevention['action_type']]
 
@@ -35,6 +35,7 @@ def send_email_to_admin(prevention):
 
     try:
         with smtplib.SMTP("localhost") as server: server.send_message(msg)
+        print(f"[EMAIL] Alerta enviada a {receiver} sobre acción de prevención: {prevention['action_type']}")
 
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")

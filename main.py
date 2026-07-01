@@ -16,7 +16,7 @@ from web import app
 
 # Capa de persistencia/logs
 from db.repository import insert_prevention_action, get_module_value
-from alerts.logger import register_alarm 
+from alerts.logger import register_prevention, register_alarm, register_prevention_action
 
 # Módulos de la carpeta detection
 from detection.access_monitor import detect_bruteforce
@@ -150,7 +150,7 @@ def system_init():
             # ==========================================
             # MÓDULO 1: Integridad de Archivos 
             # ==========================================
-            alarm_id, data = check_integrity() if get_module_value("file_integrity") else (None, None)
+            alarm_id, data = check_integrity() if get_module_value("file_integrity")[0] == True else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de Integridad detectada en el archivo {data}")
@@ -168,7 +168,7 @@ def system_init():
             # ==========================================
             # MÓDULO 2: Monitoreo de Usuarios (UID 0)
             # ==========================================
-            alarm_id_u, username_u = detect_uid_zero_escalation() if get_module_value("users_monitor") else (None, None)
+            alarm_id_u, username_u = detect_uid_zero_escalation() if get_module_value("users_monitor")[0] == True else (None, None)
             
             if alarm_id_u and username_u:
                 print(f"[!] Escalación de privilegios detectada. Usuario malicioso UID 0: {username_u}")
@@ -187,13 +187,13 @@ def system_init():
             # ==========================================
             # MÓDULO 3: Detector de Sniffers
             # ==========================================
-            if get_module_value("sniffer_detect"):
+            if get_module_value("sniffer_detect")[0] == True:
                 run_sniffer_detection()
 
             # ==========================================
             # MÓDULO 4: Analizador de Logs Web
             # ==========================================
-            alarm_id_l, target_l = analyze_logs(WEB_LOG) if get_module_value("log_analyzer") else (None, None)
+            alarm_id_l, target_l = analyze_logs(WEB_LOG) if get_module_value("log_analyzer")[0] == True else (None, None)
             
             if alarm_id_l and target_l:
                 print(f"[!] Ataque Web detectado (SQLi/Webshell) en {WEB_LOG}")
@@ -209,7 +209,7 @@ def system_init():
             # ==========================================
             # MÓDULO 5: Cola de Correos 
             # ==========================================
-            alarm_id, data = run_mail_queue_detection() if get_module_value("mail_queue") else (None, None)
+            alarm_id, data = run_mail_queue_detection() if get_module_value("mail_queue")[0] == True else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de Cola de Correos detectada, tamaño: {data}")
@@ -233,10 +233,17 @@ def system_init():
                         duracion_bloqueo = None
                     )
                     
+                    register_prevention_action(
+                        alarma_id = alarm_id,
+                        accion = action_upper,
+                        resultado = "EXITO" if success else "FALLIDO",
+                        comando_ejecutado = command,
+                        duracion_bloqueo = None
+                    )
             # ==========================================
             # MÓDULO 6: Monitoreo de Procesos Sospechosos
             # ==========================================
-            alarm_id_p, pid_p = detect_suspicious_processes() if get_module_value("process_monitor") else (None, None)
+            alarm_id_p, pid_p = detect_suspicious_processes() if get_module_value("process_monitor")[0] == True else (None, None)
             
             if alarm_id_p and pid_p:
                 print(f"[!] Proceso malicioso detectado corriendo en directorio temporal. PID: {pid_p}")
@@ -252,7 +259,7 @@ def system_init():
             # ==========================================
             # MÓDULO 7: Monitoreo de Archivos Temporales (/tmp)
             # ==========================================
-            alarm_id_t, file_path_t = detect_suspicious_tmp_files() if get_module_value("tmp_monitor") else (None, None)
+            alarm_id_t, file_path_t = detect_suspicious_tmp_files() if get_module_value("tmp_monitor")[0] == True else (None, None)
             
             if alarm_id_t and file_path_t:
                 print(f"[!] Archivo peligroso detectado en directorio temporal: {file_path_t}")
@@ -268,7 +275,7 @@ def system_init():
             # ==========================================
             # MÓDULO 8: Detector de DDOS
             # ==========================================
-            alarm_id, data = detect_ddos() if get_module_value("ddos_detect") else (None, None)
+            alarm_id, data = detect_ddos() if get_module_value("ddos_detect")[0] == True else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de DDOS detectada desde la IP {data}")
@@ -278,7 +285,7 @@ def system_init():
             # ==========================================
             # MÓDULO 9: Monitoreo de Cron Estructurado 
             # ==========================================
-            if get_module_value("cron_monitor"):
+            if get_module_value("cron_monitor")[0] == True:
                 for user in pwd.getpwall():
                     alarm_id_c, username_c = detect_malicious_cron(user.pw_name)
                     
@@ -296,7 +303,7 @@ def system_init():
 			# ==========================================
             # MÓDULO 10: Intentos de Acceso Repetidos
             # ==========================================
-            alarm_id, data = detect_bruteforce(SECURE_LOG) if get_module_value("access_monitor") else (None, None)
+            alarm_id, data = detect_bruteforce(SECURE_LOG) if get_module_value("access_monitor")[0] == True else (None, None)
             
             if alarm_id and data:
                 print(f"[!] Alerta de intentos de acceso repetidos detectada desde la IP {data}")

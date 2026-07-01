@@ -75,22 +75,3 @@ def stop_mail_service(service_name="postfix"):
 
     except subprocess.CalledProcessError as e:
         return False, e.cmd if hasattr(e, "cmd") else str(e)
-
-
-def execute_mail_prevention(queue_size):
-    results = []
-
-    try:
-        if queue_size > 100:
-            results.append(stop_mail_service())
-
-        if queue_size > 50:
-            results.append(block_mail_ports())
-
-        if queue_size > 0:
-            results.append(flush_mail_queue())
-
-        return results
-
-    except Exception as e:
-        return [(False, f"Unexpected error: {str(e)}")]
