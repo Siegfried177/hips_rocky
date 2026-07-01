@@ -15,11 +15,11 @@ def _ensure_file():
     # Create file if it does not exist
     if not os.path.exists(ALARM_BUFFER_FILE):
         with open(ALARM_BUFFER_FILE, "w") as f:
-            json.dump([], f)  # initialize as empty JSON array
+            json.dump([], f) 
 
     if not os.path.exists(PREVENTION_BUFFER_FILE):
         with open(PREVENTION_BUFFER_FILE, "w") as f:
-            json.dump([], f)  # initialize as empty JSON array
+            json.dump([], f)  
 
 
 def register_alarm(module, alarm_type, message, source_ip=None, user=None, raw_data=None):

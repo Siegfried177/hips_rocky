@@ -24,7 +24,7 @@ MAILS_BODY = {
 # Function to send email alerts to the admin
 def send_email_to_admin(prevention):
     sender = "hips@system.local"
-    receiver = "root"
+    receiver = "admin@localhost"
     subject = f"[PREVENCIÓN AUTOMÁTICA DE SEGURIDAD REALIZADA] - {MAILS_SUBJECT.get(prevention['action_type'])}"
     body = MAILS_BODY[prevention['action_type']]
 

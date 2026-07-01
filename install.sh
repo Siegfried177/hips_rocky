@@ -18,6 +18,12 @@ echo "[*] Verificando e instalando pip3..."
 
 dnf install python3-pip -y > /dev/null
 
+echo "[*] Instalando Postfix..."
+dnf install postfix -y > /dev/null
+
+echo "[*] Habilitando e iniciando Postfix..."
+systemctl enable postfix --now
+
 if [ -f requirements.txt ]; then
     echo "[*] Instalando dependencias de Python desde requirements.txt..."
     pip3 install -r requirements.txt
