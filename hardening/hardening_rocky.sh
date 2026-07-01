@@ -102,7 +102,7 @@ echo "[+] Autenticación por contraseña en SSH deshabilitada de raíz."
 echo "[*] 10/10 Estableciendo Umask Global a 027..."
 # Aplicar en /etc/profile
 if ! grep -q "umask 027" /etc/profile; then
-    echo "umask 027" >> /etc/etc/profile 2>/dev/null || echo "umask 027" >> /etc/profile
+    echo "umask 027" >> /etc/profile 2>/dev/null || echo "umask 027" >> /etc/profile
 fi
 # Aplicar en /etc/bashrc
 if ! grep -q "umask 027" /etc/bashrc; then
